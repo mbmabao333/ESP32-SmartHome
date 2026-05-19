@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>EMQX WebSocket 连接测试</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
+    #log { background: #111; padding: 16px; border-radius: 8px; height: 300px;
+           overflow-y: auto; white-space: pre-wrap; font-size: 13px; }
+    .ok   { color: #07c160; }
+    .err  { color: #ff4d4f; }
+    .info { color: #aaa; }
+    button { margin: 8px 4px; padding: 8px 20px; border-radius: 6px; border: none;
+             background: #1976d2; color: #fff; cursor: pointer; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2 style="color:#07c160">EMQX WebSocket 连接测试</h2>
+  <button onclick="doConnect()">连接</button>
+  <button onclick="doDisconnect()">断开</button>
+  <div id="log"></div>
+
+<script>
+  const HOST = 'd5771e15.ala.cn-hangzhou.emqxsl.cn';
+  const PORT = 8084;
+  const USER = '01';
+  const PASS = '12345678';
+
+  let ws = null;
+
+  function log(msg, cls) {
+    const el = document.getElementById('log');
+    const ts = new Date().toLocaleTimeString();
+    el.innerHTML += `<span class="${cls||'info'}">[${ts}] ${msg}\n</span>`;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function doConnect() {
+    if (ws) { log('已有连接，先断开', 'err'); return; }
+    const url = `wss://${HOST}:${PORT}/mqtt`;
+    log(`正在连接: ${url}`);
+    ws = new WebSocket(url, ['mqtt']);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+      log('WebSocket 握手成功！正在发送 MQTT CONNECT...', 'ok');
+      sendConnect();
+    };
+    ws.onmessage = (e) => {
+      const bytes = new Uint8Array(e.data);
+      const type = (bytes[0] >> 4) & 0x0F;
+      if (type === 2) {
+        const rc = bytes[3];
+        if (rc === 0) log('MQTT CONNACK: 连接成功！', 'ok');
+        else log(`MQTT CONNACK: 失败 rc=${rc}`, 'err');
+      } else {
+        log(`收到数据包 type=${type}`, 'info');
+      }
+    };
+    ws.onerror = (e) => log('WebSocket 错误: ' + JSON.stringify(e.message || '(无详情)'), 'err');
+    ws.onclose = (e) => { log(`连接关闭 code=${e.code} reason=${e.reason}`, 'err'); ws = null; };
+  }
+
+  function sendConnect() {
+    function encStr(s) {
+      const b = new TextEncoder().encode(s);
+      return [b.length >> 8, b.length & 0xFF, ...b];
+    }
+    function encLen(n) {
+      const r = [];
+      do { let b = n % 128; n = Math.floor(n/128); if(n>0)b|=0x80; r.push(b); } while(n>0);
+      return r;
+    }
+    const cid  = encStr('browser_test_' + Math.random().toString(16).slice(2,6));
+    const usr  = encStr(USER);
+    const pwd  = encStr(PASS);
+    const hdr  = [0x00,0x04,0x4D,0x51,0x54,0x54,0x04,0b11000010,0x00,0x3C];
+    const body = [...hdr,...cid,...usr,...pwd];
+    ws.send(new Uint8Array([0x10,...encLen(body.length),...body]).buffer);
+  }
+
+  function doDisconnect() {
+    if (!ws) { log('未连接', 'err'); return; }
+    ws.send(new Uint8Array([0xE0,0x00]).buffer);
+    ws.close();
+    ws = null;
+    log('已断开');
+  }
+
+  log('点击【连接】开始测试');
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!-- 智能家居控制面板 -->
+<view class="page">
+
+  <!-- 状态栏 -->
+  <view class="status-bar">
+    <view class="dot {{connected ? 'dot-online' : 'dot-offline'}}"></view>
+    <text class="status-text">{{statusText}}</text>
+    <text class="device-badge {{deviceOnline ? 'badge-online' : 'badge-offline'}}">
+      设备 {{deviceOnline ? '在线' : '离线'}}
+    </text>
+  </view>
+
+  <!-- 报警横幅（有报警时才显示） -->
+  <view class="alarm-banner" wx:if="{{alarm}}">
+    <text class="alarm-icon">!</text>
+    <text class="alarm-text">{{alarmDesc || '系统报警'}}</text>
+    <button class="alarm-clear-btn" bindtap="clearAlarm">消警</button>
+  </view>
+
+  <!-- 传感器数据 -->
+  <view class="section">
+    <text class="section-title">实时传感器</text>
+    <view class="grid">
+      <view class="data-card">
+        <text class="data-icon">温</text>
+        <text class="data-value">{{temp}}</text>
+        <text class="data-unit">°C</text>
+      </view>
+      <view class="data-card">
+        <text class="data-icon">湿</text>
+        <text class="data-value">{{humi}}</text>
+        <text class="data-unit">%</text>
+      </view>
+      <view class="data-card">
+        <text class="data-icon">光</text>
+        <text class="data-value">{{lux}}</text>
+        <text class="data-unit">lx</text>
+      </view>
+      <view class="data-card {{smokeWarn ? 'card-warn' : ''}} {{smokeAlarm ? 'card-alert' : ''}}">
+        <text class="data-icon">烟</text>
+        <text class="data-value">{{mq2}}</text>
+        <text class="data-unit">ADC</text>
+      </view>
+      <view class="data-card {{door ? 'card-alert' : ''}}">
+        <text class="data-icon">门</text>
+        <text class="data-value">{{door ? '触发' : '正常'}}</text>
+      </view>
+      <view class="data-card {{pir ? 'card-warn' : ''}}">
+        <text class="data-icon">人</text>
+        <text class="data-value">{{pir ? '检测到' : '无'}}</text>
+      </view>
+      <view class="data-card {{rain ? 'card-info' : ''}}">
+        <text class="data-icon">雨</text>
+        <text class="data-value">{{rain ? '有雨' : '无雨'}}</text>
+      </view>
+      <view class="data-card">
+        <text class="data-icon">模式</text>
+        <text class="data-value mode-value">{{modeLabel}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 模式切换 -->
+  <view class="section">
+    <text class="section-title">模式切换</text>
+    <view class="btn-row">
+      <button class="mode-btn {{mode == 'manual' ? 'mode-active' : ''}}"
+              bindtap="setMode" data-mode="manual">手动</button>
+      <button class="mode-btn {{mode == 'auto' ? 'mode-active' : ''}}"
+              bindtap="setMode" data-mode="auto">自动</button>
+      <button class="mode-btn {{mode == 'security' ? 'mode-active' : ''}}"
+              bindtap="setMode" data-mode="security">安防</button>
+    </view>
+  </view>
+
+  <!-- LED 控制 -->
+  <view class="section">
+    <text class="section-title">LED 控制（手动模式）</text>
+    <view class="btn-row">
+      <button class="ctrl-btn btn-red"   bindtap="ledCmd" data-cmd="red_on">红灯 开</button>
+      <button class="ctrl-btn btn-gray"  bindtap="ledCmd" data-cmd="red_off">红灯 关</button>
+    </view>
+    <view class="btn-row" style="margin-top:16rpx">
+      <button class="ctrl-btn btn-green" bindtap="ledCmd" data-cmd="green_on">绿灯 开</button>
+      <button class="ctrl-btn btn-gray"  bindtap="ledCmd" data-cmd="green_off">绿灯 关</button>
+    </view>
+  </view>
+
+  <!-- 风扇 & 蜂鸣器 -->
+  <view class="section">
+    <text class="section-title">开关控制</text>
+    <view class="switch-row">
+      <text class="switch-label">风扇</text>
+      <switch checked="{{fanOn}}" bindchange="toggleFan" color="#07c160"/>
+    </view>
+    <view class="switch-row">
+      <text class="switch-label">蜂鸣器</text>
+      <switch checked="{{buzzerOn}}" bindchange="toggleBuzzer" color="#07c160"/>
+    </view>
+  </view>
+
+  <!-- 舵机滑块 -->
+  <view class="section">
+    <text class="section-title">舵机角度：{{servoDisplay}}°</text>
+    <slider min="0" max="180"
+            value="{{servoAngle}}"
+            bindchanging="onServoChanging"
+            bindchange="onServoChange"
+            activeColor="#1976d2"
+            block-size="28"
+            show-value/>
+  </view>
+
+  <!-- 消警按钮 -->
+  <view class="section">
+    <button class="full-btn btn-warn" bindtap="clearAlarm">一键消警</button>
+  </view>
+
+</view>

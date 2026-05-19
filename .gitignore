@@ -1,0 +1,12 @@
+# Claude Code 内部工作目录
+.claude/
+
+# 微信开发者工具私有配置（含个人 IDE 设置，不入库）
+miniprogram/project.private.config.json
+
+# MQTT 连接密码（敏感信息，不入库）
+miniprogram/config.js
+
+# 系统文件
+.DS_Store
+Thumbs.db
